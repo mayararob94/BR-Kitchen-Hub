@@ -44,6 +44,9 @@ npx wrangler r2 bucket create br-kitchen-hub-photos
 
 # 2. Environment: copy and fill secrets
 cp .env.example .dev.vars   # set AUTH_SECRET (openssl rand -base64 48), etc.
+# The edge middleware reads Next's env files (not .dev.vars) in local dev,
+# so AUTH_SECRET must also be present in .env.local with the SAME value:
+grep '^AUTH_SECRET=' .dev.vars > .env.local
 
 # 3. Apply the migration and seed a super-admin (edit the email in the seed):
 npm run db:migrate:local
