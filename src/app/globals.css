@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * BR Kitchen Hub design tokens.
+ * Premium, minimal, professional. Warm neutral surfaces with a deep
+ * charcoal-green primary that reads as clean and food-safe. HSL channels
+ * so Tailwind's `hsl(var(--token))` composition works in light and dark.
+ */
+@layer base {
+  :root {
+    --background: 40 30% 99%;
+    --foreground: 160 12% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 160 12% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 12% 12%;
+
+    /* Deep herb green */
+    --primary: 158 42% 22%;
+    --primary-foreground: 40 30% 98%;
+
+    --secondary: 150 14% 96%;
+    --secondary-foreground: 160 12% 18%;
+
+    --muted: 150 14% 96%;
+    --muted-foreground: 160 8% 42%;
+
+    /* Warm brass accent */
+    --accent: 36 60% 52%;
+    --accent-foreground: 40 40% 98%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 150 55% 34%;
+    --success-foreground: 0 0% 98%;
+
+    --warning: 38 92% 45%;
+    --warning-foreground: 40 40% 12%;
+
+    --border: 150 12% 88%;
+    --input: 150 12% 88%;
+    --ring: 158 42% 22%;
+
+    --radius: 0.65rem;
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  }
+
+  .dark {
+    --background: 160 14% 8%;
+    --foreground: 40 20% 94%;
+
+    --card: 160 12% 11%;
+    --card-foreground: 40 20% 94%;
+
+    --popover: 160 12% 11%;
+    --popover-foreground: 40 20% 94%;
+
+    --primary: 152 40% 62%;
+    --primary-foreground: 160 30% 10%;
+
+    --secondary: 160 8% 18%;
+    --secondary-foreground: 40 20% 94%;
+
+    --muted: 160 8% 18%;
+    --muted-foreground: 150 8% 62%;
+
+    --accent: 36 55% 58%;
+    --accent-foreground: 160 30% 10%;
+
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 150 45% 52%;
+    --success-foreground: 160 30% 10%;
+
+    --warning: 38 80% 55%;
+    --warning-foreground: 160 30% 10%;
+
+    --border: 160 8% 22%;
+    --input: 160 8% 22%;
+    --ring: 152 40% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}

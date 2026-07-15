@@ -33,6 +33,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local proxy/registry override (session-specific, contains local CA path)
+.npmrc
+
 # local env files
 .env
 .env*.local
