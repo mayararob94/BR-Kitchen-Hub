@@ -77,6 +77,21 @@ npm run dev
    would land on `/portal`. Signing out clears the session.
 4. Visiting `/admin` or `/portal` without a valid session redirects to `/login`.
 
+## Staging password sign-in (temporary)
+
+Until email delivery (Resend) is wired up in Phase 3, OTP codes only appear in
+the server log, which is awkward for a hosted staging draft. Setting the
+`STAGING_LOGIN_PASSWORD` secret enables an additional shared-password sign-in
+for an existing account:
+
+```bash
+wrangler secret put STAGING_LOGIN_PASSWORD   # e.g. a value you share privately
+```
+
+The password value never lives in the repo, the comparison is constant-time,
+and it only signs in accounts that already exist. Remove the secret to disable
+this path and return to OTP-only login (production leaves it unset).
+
 ## Security model (D1 has no RLS)
 
 Cloudflare D1 has no row-level security, so tenant isolation is enforced in the

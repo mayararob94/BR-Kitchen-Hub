@@ -9,6 +9,19 @@ import { isAuthConfigured } from "@/lib/auth/secret";
 import { findUserByEmail, getRoleAssignments, markEmailVerified } from "@/lib/repositories/users";
 import { isAdminPrincipal } from "@/lib/rbac/authorize";
 import { sendEmail } from "@/lib/email/send";
+import { constantTimeEqual } from "@/lib/auth/hash";
+
+/**
+ * Finalise a sign-in: mark the email verified, mint a session JWT and set the
+ * httpOnly cookie. Shared by the OTP and staging-password flows.
+ */
+async function finalizeSignIn(userId: string, email: string): Promise<void> {
+  const db = getDb();
+  await markEmailVerified(db, userId);
+  const token = await signSession({ sub: userId, email });
+  const store = await cookies();
+  store.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+}
 
 const emailSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address."),
@@ -97,11 +110,66 @@ export async function verifyOtpAction(
     };
   }
 
-  await markEmailVerified(db, user.id);
-  const token = await signSession({ sub: user.id, email: user.email });
-  const store = await cookies();
-  store.set(SESSION_COOKIE_NAME, token, sessionCookieOptions());
+  await finalizeSignIn(user.id, user.email);
+  return { ok: true };
+}
 
+// ─── Staging password sign-in (temporary) ────────────────────────────────
+// Enabled only when STAGING_LOGIN_PASSWORD is set (a Cloudflare secret in the
+// staging environment). It lets a known account sign in with a shared password
+// so the draft is easy to browse before email delivery (Resend) is wired up in
+// Phase 3. The password value never lives in the repo. Remove the secret to
+// disable this path entirely (production leaves it unset).
+
+/** True when the staging password login is configured for this environment. */
+export async function isStagingPasswordLoginEnabled(): Promise<boolean> {
+  const pw = process.env.STAGING_LOGIN_PASSWORD;
+  return typeof pw === "string" && pw.length >= 8;
+}
+
+const passwordSchema = emailSchema.extend({
+  password: z.string().min(1, "Enter the staging password."),
+});
+
+export async function passwordLoginAction(
+  _prev: VerifyOtpState,
+  formData: FormData,
+): Promise<VerifyOtpState> {
+  const expected = process.env.STAGING_LOGIN_PASSWORD;
+  if (!expected || expected.length < 8) {
+    return { ok: false, error: "Password sign-in is not available." };
+  }
+
+  const parsed = passwordSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const { email, password } = parsed.data;
+
+  // Constant-time compare padded to a fixed length to avoid leaking the
+  // password length via timing.
+  const ok = constantTimeEqual(
+    password.padEnd(64, "\0").slice(0, 64),
+    expected.padEnd(64, "\0").slice(0, 64),
+  );
+  if (!ok) {
+    return { ok: false, error: "That password is not correct." };
+  }
+
+  const db = getDb();
+  const user = await findUserByEmail(db, email);
+  if (!user || user.status === "suspended") {
+    return {
+      ok: false,
+      error: "No active account is linked to this email. Please contact the kitchen.",
+    };
+  }
+
+  await finalizeSignIn(user.id, user.email);
   return { ok: true };
 }
 
