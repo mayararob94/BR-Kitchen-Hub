@@ -1,0 +1,54 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "br-kitchen-hub",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "limits": {
+    "cpu_ms": 60000
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
+  // Incremental cache for Next.js (OpenNext). Create with:
+  //   wrangler kv namespace create NEXT_INC_CACHE_KV
+  "kv_namespaces": [
+    {
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "PLACEHOLDER_CREATE_WITH_WRANGLER_KV"
+    }
+  ],
+  // Private buckets for customer documents and check-in/out / damage photos.
+  // Create with: wrangler r2 bucket create br-kitchen-hub-documents (and -photos)
+  "r2_buckets": [
+    {
+      "binding": "DOCUMENTS",
+      "bucket_name": "br-kitchen-hub-documents"
+    },
+    {
+      "binding": "PHOTOS",
+      "bucket_name": "br-kitchen-hub-photos"
+    }
+  ],
+  // Primary database. Create with:
+  //   wrangler d1 create br-kitchen-hub-db
+  // then paste the returned database_id below.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "br-kitchen-hub-db",
+      "database_id": "PLACEHOLDER_CREATE_WITH_WRANGLER_D1",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "http://localhost:3000"
+  }
+}
