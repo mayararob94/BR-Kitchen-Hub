@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -38,16 +37,9 @@ export function Sidebar() {
 
   return (
     <aside className="app-chrome flex w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
-      <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-4">
-        <Image src="/logo.png" alt="MEALzinha" width={32} height={32} className="rounded" />
-        <div className="leading-tight">
-          <div className="font-display text-base font-semibold text-gray-900">
-            MEALzinha
-          </div>
-          <div className="text-[10px] uppercase tracking-wider text-gray-400">
-            Hub
-          </div>
-        </div>
+      <div className="flex items-center border-b border-gray-100 px-4 py-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt="MEALzinha" className="h-9 w-auto" />
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {NAV.map(({ href, label, icon: Icon, accent }) => {

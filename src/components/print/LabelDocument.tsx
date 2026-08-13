@@ -32,9 +32,8 @@ export function LabelDocument({
     <div className="label-4x6 mx-auto my-4 flex flex-col bg-white p-[5mm] text-[#2d2a26] shadow-sm print:my-0 print:shadow-none">
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-[#2d2a26] pb-1">
-        <div className="text-[19px] font-extrabold tracking-tight text-[#ed7531]">
-          {business.name || "MEALzinha"}
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt={business.name} className="h-7 w-auto" />
         <div className="text-[13px] font-bold">
           #{orderNo} · {formatDate(order.deliveryDate)}
         </div>
