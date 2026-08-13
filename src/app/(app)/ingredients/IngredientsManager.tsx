@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Upload, Download, FileText } from "lucide-react";
 import type { Ingredient, BaseUnit } from "@/types";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney, dollarsToCents, centsToDollars } from "@/lib/money";
@@ -21,6 +23,7 @@ import type { IngredientInput } from "@/lib/db/ingredients-db";
 const CATEGORIES = ["Meat/Protein", "Produce", "Dry Goods", "Dairy", "Other"];
 
 interface Draft {
+  code: string;
   name: string;
   category: string;
   baseUnit: BaseUnit;
@@ -38,6 +41,7 @@ interface Draft {
 
 function toDraft(i?: Ingredient): Draft {
   return {
+    code: i?.code ?? "",
     name: i?.name ?? "",
     category: i?.category ?? "Other",
     baseUnit: i?.baseUnit ?? "g",
@@ -66,19 +70,31 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState("");
+
+  const allCategories = useMemo(
+    () => [...new Set(ingredients.map((i) => i.category).filter(Boolean))].sort(),
+    [ingredients]
+  );
 
   const filtered = useMemo(
     () =>
       ingredients.filter(
         (i) =>
           (showInactive || i.isActive) &&
+          (!categoryFilter || i.category === categoryFilter) &&
           (!query ||
+            (i.code ?? "").toLowerCase().includes(query.toLowerCase()) ||
             i.name.toLowerCase().includes(query.toLowerCase()) ||
             i.category.toLowerCase().includes(query.toLowerCase()) ||
             i.supplier.toLowerCase().includes(query.toLowerCase()))
       ),
-    [ingredients, query, showInactive]
+    [ingredients, query, showInactive, categoryFilter]
   );
+
+  const exportHref =
+    "/api/ingredients/export" +
+    (categoryFilter ? `?category=${encodeURIComponent(categoryFilter)}` : "");
 
   function open(i?: Ingredient) {
     setError(null);
@@ -97,6 +113,7 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
     if (priceVal != null && priceVal < 0) return setError("Price cannot be negative.");
 
     const payload: IngredientInput = {
+      code: draft.code.trim() || null,
       name: draft.name.trim(),
       category: draft.category,
       baseUnit: draft.baseUnit,
@@ -115,11 +132,20 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
       isActive: draft.isActive,
     };
     startTransition(async () => {
-      if (editing) await updateIngredientAction(editing.id, payload);
-      else await createIngredientAction(payload);
-      setEditing(null);
-      setCreating(false);
-      router.refresh();
+      try {
+        if (editing) await updateIngredientAction(editing.id, payload);
+        else await createIngredientAction(payload);
+        setEditing(null);
+        setCreating(false);
+        router.refresh();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Save failed";
+        setError(
+          /UNIQUE/i.test(msg)
+            ? `Ingredient code "${draft.code}" is already used by another ingredient.`
+            : msg
+        );
+      }
     });
   }
 
@@ -139,13 +165,25 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input
-            className="input max-w-xs"
-            placeholder="Search ingredients…"
+            className="input max-w-[220px]"
+            placeholder="Search code, name, supplier…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <select
+            className="input max-w-[160px]"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {allCategories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input
               type="checkbox"
@@ -155,9 +193,20 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
             Show inactive
           </label>
         </div>
-        <button className="btn-primary" onClick={() => open()}>
-          New Ingredient
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <a href="/api/ingredients/template" className="btn-secondary text-sm">
+            <FileText size={14} /> Template
+          </a>
+          <a href={exportHref} className="btn-secondary text-sm">
+            <Download size={14} /> Export
+          </a>
+          <Link href="/ingredients/import" className="btn-secondary text-sm">
+            <Upload size={14} /> Import CSV
+          </Link>
+          <button className="btn-primary text-sm" onClick={() => open()}>
+            + Add Ingredient
+          </button>
+        </div>
       </div>
 
       <div className="card overflow-hidden">
@@ -165,6 +214,7 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
           <table className="w-full whitespace-nowrap">
             <thead className="border-b border-gray-100 bg-gray-50">
               <tr>
+                <th className="th">Code</th>
                 <th className="th">Ingredient</th>
                 <th className="th">Category</th>
                 <th className="th text-center">Unit</th>
@@ -177,6 +227,7 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
             <tbody className="divide-y divide-gray-50">
               {filtered.map((i) => (
                 <tr key={i.id} className={`hover:bg-gray-50 ${i.isActive ? "" : "opacity-50"}`}>
+                  <td className="td font-mono text-xs text-gray-500">{i.code || "—"}</td>
                   <td className="td font-medium text-gray-900">{i.name}</td>
                   <td className="td">{i.category}</td>
                   <td className="td text-center">{i.baseUnit}</td>
@@ -207,8 +258,8 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="td py-8 text-center text-gray-400">
-                    No ingredients yet. Click “New Ingredient”.
+                  <td colSpan={8} className="td py-8 text-center text-gray-400">
+                    No ingredients yet. Click “+ Add Ingredient”.
                   </td>
                 </tr>
               )}
@@ -228,6 +279,15 @@ export function IngredientsManager({ ingredients }: { ingredients: Ingredient[] 
       >
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <div>
+              <label className="label">Ingredient Code</label>
+              <input
+                className="input font-mono"
+                value={draft.code}
+                onChange={(e) => setDraft({ ...draft, code: e.target.value })}
+                placeholder="e.g. MEAT-001"
+              />
+            </div>
             <div className="col-span-2">
               <label className="label">Name *</label>
               <input

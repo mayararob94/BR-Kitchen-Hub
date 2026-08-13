@@ -50,10 +50,32 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   labelOrientation: "portrait",
 };
 
+/** Add a column only if it doesn't already exist (SQLite lacks ADD COLUMN IF NOT EXISTS). */
+function ensureColumn(
+  db: Database.Database,
+  table: string,
+  column: string,
+  decl: string
+) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+  }
+}
+
 function applySchema(db: Database.Database) {
   const schemaPath = path.join(process.cwd(), "src", "lib", "db", "schema.sql");
   const schema = fs.readFileSync(schemaPath, "utf8");
   db.exec(schema);
+
+  // ── Additive migrations ──
+  // Stable per-ingredient code used to match rows on CSV import/update.
+  ensureColumn(db, "ingredients", "ingredient_code", "TEXT");
+  db.exec(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_ingredients_code
+       ON ingredients(ingredient_code COLLATE NOCASE)
+       WHERE ingredient_code IS NOT NULL AND ingredient_code != ''`
+  );
 
   // Seed default settings for any key that doesn't exist yet.
   const insert = db.prepare(

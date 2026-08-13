@@ -3,6 +3,7 @@ import type { Ingredient, BaseUnit } from "@/types";
 
 interface IngredientRow {
   id: number;
+  ingredient_code: string | null;
   name: string;
   category: string;
   base_unit: string;
@@ -43,6 +44,7 @@ function map(r: IngredientRow): Ingredient {
   const baseUnit = r.base_unit as BaseUnit;
   return {
     id: r.id,
+    code: r.ingredient_code,
     name: r.name,
     category: r.category,
     baseUnit,
@@ -90,6 +92,7 @@ export function getIngredientsMap(): Map<number, Ingredient> {
 }
 
 export interface IngredientInput {
+  code?: string | null;
   name: string;
   category?: string;
   baseUnit?: BaseUnit;
@@ -105,16 +108,54 @@ export interface IngredientInput {
   isActive?: boolean;
 }
 
-export function createIngredient(data: IngredientInput): number {
+export type PriceChangeSource = "MANUAL" | "CSV_IMPORT";
+
+function normCode(code: string | null | undefined): string | null {
+  const c = (code ?? "").trim();
+  return c === "" ? null : c;
+}
+
+export function getIngredientByCode(code: string): Ingredient | null {
+  const c = normCode(code);
+  if (!c) return null;
+  const r = getDb()
+    .prepare("SELECT * FROM ingredients WHERE ingredient_code = ? COLLATE NOCASE")
+    .get(c) as IngredientRow | undefined;
+  return r ? map(r) : null;
+}
+
+/** Record an ingredient price change for later analysis (§15). */
+export function recordPriceChange(
+  ingredientId: number,
+  oldPriceCents: number | null,
+  newPriceCents: number | null,
+  source: PriceChangeSource,
+  changedBy = "Owner"
+): void {
+  if (oldPriceCents === newPriceCents) return;
+  getDb()
+    .prepare(
+      `INSERT INTO ingredient_price_history (ingredient_id, old_price_cents, new_price_cents, source, changed_by)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(ingredientId, oldPriceCents, newPriceCents, source, changedBy);
+}
+
+export function createIngredient(
+  data: IngredientInput,
+  source: PriceChangeSource = "MANUAL",
+  changedBy = "Owner"
+): number {
   const info = getDb()
     .prepare(
       `INSERT INTO ingredients
-        (name, category, base_unit, default_yield_pct, price_cents, supplier, supplier_sku,
+        (ingredient_code, name, category, base_unit, default_yield_pct, price_cents, supplier, supplier_sku,
          pack_size_base, pack_price_cents, purchase_increment_base, buffer_pct_override,
          notes, last_price_update, is_active)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     )
     .run(
+      normCode(data.code),
       data.name,
       data.category ?? "Other",
       data.baseUnit ?? "g",
@@ -132,10 +173,20 @@ export function createIngredient(data: IngredientInput): number {
         : null,
       data.isActive === false ? 0 : 1
     );
-  return Number(info.lastInsertRowid);
+  const id = Number(info.lastInsertRowid);
+  const created = getIngredient(id);
+  if (created && created.effectivePriceCents != null) {
+    recordPriceChange(id, null, created.effectivePriceCents, source, changedBy);
+  }
+  return id;
 }
 
-export function updateIngredient(id: number, data: IngredientInput): void {
+export function updateIngredient(
+  id: number,
+  data: IngredientInput,
+  source: PriceChangeSource = "MANUAL",
+  changedBy = "Owner"
+): void {
   const cur = getIngredient(id);
   if (!cur) return;
   const priceChanged =
@@ -144,13 +195,14 @@ export function updateIngredient(id: number, data: IngredientInput): void {
   getDb()
     .prepare(
       `UPDATE ingredients SET
-        name=?, category=?, base_unit=?, default_yield_pct=?, price_cents=?, supplier=?, supplier_sku=?,
+        ingredient_code=?, name=?, category=?, base_unit=?, default_yield_pct=?, price_cents=?, supplier=?, supplier_sku=?,
         pack_size_base=?, pack_price_cents=?, purchase_increment_base=?, buffer_pct_override=?,
         notes=?, last_price_update=?, is_active=?,
         updated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now')
        WHERE id=?`
     )
     .run(
+      data.code === undefined ? cur.code : normCode(data.code),
       data.name,
       data.category ?? cur.category,
       data.baseUnit ?? cur.baseUnit,
@@ -171,6 +223,16 @@ export function updateIngredient(id: number, data: IngredientInput): void {
       (data.isActive ?? cur.isActive) ? 1 : 0,
       id
     );
+  if (priceChanged) {
+    const after = getIngredient(id);
+    recordPriceChange(
+      id,
+      cur.effectivePriceCents,
+      after?.effectivePriceCents ?? null,
+      source,
+      changedBy
+    );
+  }
 }
 
 /** Ingredients referenced by any recipe are archived, not deleted (integrity). */

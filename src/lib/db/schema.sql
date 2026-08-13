@@ -225,3 +225,42 @@ CREATE TABLE IF NOT EXISTS production_plans (
   updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_production_plans_week ON production_plans(weekly_menu_id);
+
+-- ═══════════════════════════════════════════════════════════════════════
+--  INGREDIENT CSV IMPORT: price history + import audit
+--  (ingredient_code column is added by a guarded migration in index.ts)
+-- ═══════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ingredient_price_history (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  ingredient_id   INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+  old_price_cents INTEGER,
+  new_price_cents INTEGER,
+  source          TEXT NOT NULL DEFAULT 'MANUAL',   -- MANUAL | CSV_IMPORT
+  changed_by      TEXT NOT NULL DEFAULT 'Owner',
+  changed_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_price_history_ingredient ON ingredient_price_history(ingredient_id);
+
+CREATE TABLE IF NOT EXISTS ingredient_imports (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  filename        TEXT NOT NULL DEFAULT '',
+  imported_by     TEXT NOT NULL DEFAULT 'Owner',
+  rows_processed  INTEGER NOT NULL DEFAULT 0,
+  created_count   INTEGER NOT NULL DEFAULT 0,
+  updated_count   INTEGER NOT NULL DEFAULT 0,
+  skipped_count   INTEGER NOT NULL DEFAULT 0,
+  failed_count    INTEGER NOT NULL DEFAULT 0,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+
+CREATE TABLE IF NOT EXISTS ingredient_import_changes (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id        INTEGER NOT NULL REFERENCES ingredient_imports(id) ON DELETE CASCADE,
+  ingredient_id    INTEGER,
+  ingredient_code  TEXT NOT NULL DEFAULT '',
+  change_type      TEXT NOT NULL,                   -- create | update
+  changes_json     TEXT NOT NULL DEFAULT '[]',
+  created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_import_changes_import ON ingredient_import_changes(import_id);

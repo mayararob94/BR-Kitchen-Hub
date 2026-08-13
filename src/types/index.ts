@@ -211,6 +211,7 @@ export type BaseUnit = "g" | "ml" | "each";
 
 export interface Ingredient {
   id: number;
+  code: string | null; // stable identifier used for CSV import/update matching
   name: string;
   category: string;
   baseUnit: BaseUnit;

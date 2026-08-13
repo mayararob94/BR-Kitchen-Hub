@@ -71,11 +71,21 @@ tab through the meal quantities.
 A full production module connects every dish to its recipe so the system can
 plan production and purchasing from real orders.
 
-- **Ingredients** — a central database of purchased items with **Yield %**
-  (supports values above 100% for rice/beans/pasta), price per kg/L/each (or
-  pack size + pack price), supplier, purchase increment and an optional buffer
-  override. Yield turns cooked/finished weight into the **raw** weight you must
-  buy: `raw = cooked ÷ (yield ÷ 100)`.
+- **Ingredients** — a central database of purchased items with a stable
+  **Ingredient Code**, **Yield %** (supports values above 100% for
+  rice/beans/pasta), price per kg/L/each (or pack size + pack price), supplier,
+  purchase increment and an optional buffer override. Yield turns cooked/finished
+  weight into the **raw** weight you must buy: `raw = cooked ÷ (yield ÷ 100)`.
+  - **CSV import / export / bulk price update** — *Download Template*, fill it in
+    (or *Export* the current list, edit, re-import), then upload. Import is a
+    **safe merge**: rows are matched by Ingredient Code and shown as
+    NEW / NO-CHANGE / CHANGES / ERROR before anything is written. New ingredients
+    are created; existing ones are **never overwritten unless you tick “apply
+    update”** (default is keep-existing); ingredients absent from the file are
+    left untouched — a CSV is an import event, never a replacement of the
+    database. Price changes are recorded to a price-history log and every import
+    is audited. Because recipe costs are derived, updated prices immediately
+    cascade through batch recipes and dishes; historical snapshots stay frozen.
 - **Recipes** — two kinds, sharing one engine:
   - **Final Dish** — linked to a meal; you enter each component's finished
     weight and the system derives raw quantity, cost/meal, food-cost % and
