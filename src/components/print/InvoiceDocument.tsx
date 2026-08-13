@@ -28,7 +28,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
       <div className="flex items-start justify-between border-b-2 border-[#2d2a26] pb-4">
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt={b.businessName} className="h-14 w-auto" />
+          <img src="/logo.svg" alt={b.businessName} className="h-24 w-auto" />
           {b.tagline && <div className="mt-2 text-sm font-medium text-[#ed7531]">{b.tagline}</div>}
           <div className="mt-1 text-[11px] leading-tight text-[#6b6560]">
             {[b.address, b.phone && `Ph: ${formatPhone(b.phone)}`, b.email]

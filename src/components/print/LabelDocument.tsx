@@ -33,7 +33,7 @@ export function LabelDocument({
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-[#2d2a26] pb-1">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt={business.name} className="h-7 w-auto" />
+        <img src="/logo.svg" alt={business.name} className="h-12 w-auto" />
         <div className="text-[13px] font-bold">
           #{orderNo} · {formatDate(order.deliveryDate)}
         </div>

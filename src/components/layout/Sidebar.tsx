@@ -39,7 +39,7 @@ export function Sidebar() {
     <aside className="app-chrome flex w-56 shrink-0 flex-col border-r border-gray-200 bg-white">
       <div className="flex items-center border-b border-gray-100 px-4 py-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="MEALzinha" className="h-9 w-auto" />
+        <img src="/logo.svg" alt="MEALzinha" className="h-12 w-auto" />
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {NAV.map(({ href, label, icon: Icon, accent }) => {
