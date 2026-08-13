@@ -24,11 +24,14 @@ export function getDbPath(): string {
 const DEFAULT_SETTINGS: Record<string, string> = {
   businessName: "MEALzinha",
   tradingName: "MEALzinha",
+  tagline: "Brazilian Meal Prep — Gold Coast",
   abn: "47 971 306 531",
   address: "Gold Coast, QLD",
   phone: "+61489154463",
   email: "orders@mealzinha.com.au",
   website: "mealzinha.com.au",
+  invoiceFooterNote:
+    "No GST applicable — small business under the GST registration threshold",
 
   bankAccountName: "MEALzinha",
   bankBsb: "",

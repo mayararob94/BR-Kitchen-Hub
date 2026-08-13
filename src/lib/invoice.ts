@@ -20,11 +20,13 @@ export function buildInvoiceData(
     business: {
       businessName: settings.businessName,
       tradingName: settings.tradingName,
+      tagline: settings.tagline,
       abn: settings.abn,
       address: settings.address,
       phone: settings.phone,
       email: settings.email,
       website: settings.website,
+      invoiceFooterNote: settings.invoiceFooterNote,
     },
     bank: {
       accountName: settings.accountName,

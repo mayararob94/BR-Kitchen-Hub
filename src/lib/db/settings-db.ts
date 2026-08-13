@@ -52,11 +52,13 @@ export function getSettings(): AppSettings {
   return {
     businessName: s.businessName ?? "",
     tradingName: s.tradingName ?? "",
+    tagline: s.tagline ?? "",
     abn: s.abn ?? "",
     address: s.address ?? "",
     phone: s.phone ?? "",
     email: s.email ?? "",
     website: s.website ?? "",
+    invoiceFooterNote: s.invoiceFooterNote ?? "",
 
     accountName: s.bankAccountName ?? "",
     bsb: s.bankBsb ?? "",

@@ -26,7 +26,7 @@ export function PrintControls({
     style.id = "print-page-size";
     style.textContent =
       mode === "label"
-        ? "@page { size: 101.6mm 152.4mm; margin: 0; }"
+        ? "@page { size: 152.4mm 101.6mm; margin: 0; }"
         : mode === "a4l"
           ? "@page { size: A4 landscape; margin: 10mm; }"
           : "@page { size: A4; margin: 14mm; }";

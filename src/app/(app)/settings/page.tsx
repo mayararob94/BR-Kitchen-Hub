@@ -25,6 +25,8 @@ export default function SettingsPage() {
           initial={{
             businessName: s.businessName,
             tradingName: s.tradingName,
+            tagline: s.tagline,
+            invoiceFooterNote: s.invoiceFooterNote,
             abn: s.abn,
             address: s.address,
             phone: s.phone,

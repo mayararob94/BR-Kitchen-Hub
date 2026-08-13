@@ -65,7 +65,14 @@ export function SettingsForm({ initial }: { initial: SettingsFormValues }) {
           <Field label="Phone" value={v.phone} onChange={set("phone")} />
           <Field label="Email" value={v.email} onChange={set("email")} />
           <Field label="Website" value={v.website} onChange={set("website")} />
+          <Field label="Tagline" value={v.tagline} onChange={set("tagline")} wide />
           <Field label="Address" value={v.address} onChange={set("address")} wide />
+          <Field
+            label="Invoice Footer / GST Note"
+            value={v.invoiceFooterNote}
+            onChange={set("invoiceFooterNote")}
+            wide
+          />
         </div>
       </section>
 

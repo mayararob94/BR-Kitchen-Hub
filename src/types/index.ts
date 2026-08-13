@@ -11,11 +11,13 @@
 export interface BusinessSettings {
   businessName: string;
   tradingName: string;
+  tagline: string;
   abn: string;
   address: string;
   phone: string;
   email: string;
   website: string;
+  invoiceFooterNote: string;
 }
 
 export interface BankSettings {

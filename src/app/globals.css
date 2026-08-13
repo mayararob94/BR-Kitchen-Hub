@@ -72,6 +72,13 @@
   }
 }
 
+/* Preserve background colours (header bands, table headers) when printing. */
+.print-page,
+.label-4x6 {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
 /* ── A4 documents: invoices, production summary, delivery manifest ── */
 @media print {
   body[data-print] .app-chrome {
@@ -102,7 +109,7 @@ body[data-print="a4l"] {
 }
 
 /* ── 4×6 inch thermal delivery labels ──
-   101.6mm × 152.4mm portrait. Each label is its own page. */
+   152.4mm × 101.6mm LANDSCAPE (6×4). Each label is its own page. */
 @media print {
   body[data-print="label"] {
     background: #fff !important;
@@ -114,8 +121,8 @@ body[data-print="a4l"] {
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
-    width: 101.6mm !important;
-    height: 152.4mm !important;
+    width: 152.4mm !important;
+    height: 101.6mm !important;
     break-after: page;
     page-break-after: always;
   }
@@ -125,10 +132,9 @@ body[data-print="a4l"] {
   }
 }
 
-/* The @page size must be declared so browsers pick 4×6 automatically.
-   These rules only take effect on the label print route (which lazily
-   injects a <style> switching @page — see PrintPageSize component). */
+/* The @page size must be declared so browsers pick 6×4 automatically.
+   PrintControls injects the matching @page size on the label route. */
 .label-4x6 {
-  width: 101.6mm;
-  height: 152.4mm;
+  width: 152.4mm;
+  height: 101.6mm;
 }

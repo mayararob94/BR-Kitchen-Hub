@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getOrder } from "@/lib/db/orders-db";
+import { getSettings } from "@/lib/db/settings-db";
 import { LabelDocument } from "@/components/print/LabelDocument";
 import { PrintControls } from "@/components/PrintControls";
 
@@ -13,11 +14,12 @@ export default async function PrintLabelPage({
   const { id } = await params;
   const order = getOrder(Number(id));
   if (!order) notFound();
+  const s = getSettings();
 
   return (
     <div className="min-h-screen bg-gray-100">
       <PrintControls mode="label" backHref={`/orders/${order.id}`} title={`Label ${order.orderNumber}`} />
-      <LabelDocument order={order} />
+      <LabelDocument order={order} business={{ name: s.businessName, website: s.website }} />
     </div>
   );
 }

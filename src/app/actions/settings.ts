@@ -7,6 +7,8 @@ import { dollarsToCents } from "@/lib/money";
 export interface SettingsFormValues {
   businessName: string;
   tradingName: string;
+  tagline: string;
+  invoiceFooterNote: string;
   abn: string;
   address: string;
   phone: string;
@@ -35,6 +37,8 @@ export async function saveSettingsAction(v: SettingsFormValues): Promise<void> {
   setSettings({
     businessName: v.businessName,
     tradingName: v.tradingName,
+    tagline: v.tagline,
+    invoiceFooterNote: v.invoiceFooterNote,
     abn: v.abn,
     address: v.address,
     phone: v.phone,
