@@ -27,6 +27,8 @@ export interface SettingsFormValues {
   invoicePaperSize: string;
   labelSize: string;
   labelOrientation: string;
+
+  defaultBufferPct: string;
 }
 
 export async function saveSettingsAction(v: SettingsFormValues): Promise<void> {
@@ -53,7 +55,10 @@ export async function saveSettingsAction(v: SettingsFormValues): Promise<void> {
     invoicePaperSize: v.invoicePaperSize,
     labelSize: v.labelSize,
     labelOrientation: v.labelOrientation,
+
+    defaultBufferPct: String(Math.max(0, parseFloat(v.defaultBufferPct) || 0)),
   });
+  revalidatePath("/production");
   revalidatePath("/settings");
   revalidatePath("/orders/new");
 }

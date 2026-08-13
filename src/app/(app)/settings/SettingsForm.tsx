@@ -108,6 +108,11 @@ export function SettingsForm({ initial }: { initial: SettingsFormValues }) {
             value={v.defaultDeliveryFeeDollars}
             onChange={set("defaultDeliveryFeeDollars")}
           />
+          <Field
+            label="Default Production Buffer (%)"
+            value={v.defaultBufferPct}
+            onChange={set("defaultBufferPct")}
+          />
         </div>
         <p className="mt-2 text-xs text-gray-400">
           Numbers are used and incremented automatically. Editing “next number” here

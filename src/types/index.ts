@@ -205,6 +205,180 @@ export interface InvoiceLineItem {
   lineTotalCents: number;
 }
 
+// ─── Production module: Ingredients ───
+
+export type BaseUnit = "g" | "ml" | "each";
+
+export interface Ingredient {
+  id: number;
+  name: string;
+  category: string;
+  baseUnit: BaseUnit;
+  defaultYieldPct: number; // e.g. 75, 250
+  priceCents: number | null; // cents per kg / L / each; null = unknown
+  supplier: string;
+  supplierSku: string;
+  packSizeBase: number | null; // optional pack size in base units
+  packPriceCents: number | null; // optional pack price
+  purchaseIncrementBase: number | null; // optional purchasing round-up increment
+  bufferPctOverride: number | null;
+  notes: string;
+  lastPriceUpdate: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Effective price per kg/L/each in cents (derived from pack size if set). */
+  effectivePriceCents: number | null;
+}
+
+// ─── Production module: Recipes ───
+
+export type RecipeType = "final" | "batch";
+export type ComponentType = "ingredient" | "recipe";
+
+export interface RecipeComponent {
+  id: number;
+  recipeId: number;
+  componentType: ComponentType;
+  ingredientId: number | null;
+  childRecipeId: number | null;
+  quantityBase: number;
+  yieldOverride: number | null;
+  priceOverrideCents: number | null;
+  prepNotes: string;
+  sortOrder: number;
+  // convenience joins
+  name?: string;
+  baseUnit?: BaseUnit;
+}
+
+export interface Recipe {
+  id: number;
+  mealId: number | null;
+  name: string;
+  recipeType: RecipeType;
+  version: number;
+  isActive: boolean;
+  batchYieldBase: number | null;
+  batchYieldUnit: BaseUnit;
+  batchIncrement: number | null;
+  instructions: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  components: RecipeComponent[];
+}
+
+// ─── Production module: computed (engine output) ───
+
+export interface ComputedComponent {
+  componentId: number;
+  type: ComponentType;
+  refId: number; // ingredientId or childRecipeId
+  name: string;
+  baseUnit: BaseUnit;
+  cookedBase: number; // finished/used quantity per portion (or per batch input for batch ingredient)
+  rawBase: number; // raw required per portion
+  yieldPct: number;
+  unitPriceCents: number | null; // per kg/L/each used
+  costCents: number | null; // cost per portion for this component
+  costUnavailable: boolean;
+}
+
+export interface ComputedRecipe {
+  recipeId: number;
+  type: RecipeType;
+  name: string;
+  components: ComputedComponent[];
+  finishedWeightBase: number; // total finished/cooked weight per portion (final) or batch yield (batch)
+  rawWeightBase: number; // total raw ingredient weight per portion/batch
+  foodCostCents: number | null; // per portion (final) or per batch (batch)
+  costUnavailable: boolean;
+  // batch recipes only
+  batchYieldBase?: number | null;
+  costPerBaseFinishedCents?: number | null; // cents per base unit of finished output
+  warnings: string[];
+}
+
+export interface IngredientRequirement {
+  ingredientId: number;
+  name: string;
+  category: string;
+  baseUnit: BaseUnit;
+  supplier: string;
+  requiredBase: number; // raw required, no buffer
+  bufferPct: number;
+  finalRequiredBase: number; // with buffer
+  purchaseBase: number; // rounded to purchase increment
+  purchaseIncrementBase: number | null;
+  unitPriceCents: number | null;
+  estimatedCostCents: number | null; // purchaseBase × price
+  costUnavailable: boolean;
+}
+
+export interface DishProduction {
+  mealId: number;
+  recipeId: number | null;
+  dishName: string;
+  portions: number;
+  hasRecipe: boolean;
+  components: {
+    name: string;
+    type: ComponentType;
+    baseUnit: BaseUnit;
+    finishedBase: number; // cooked/finished total for all portions
+    rawBase: number; // raw total for all portions (ingredients) or finished for sub-recipes
+  }[];
+  foodCostCents: number | null;
+}
+
+export interface SubRecipeProduction {
+  recipeId: number;
+  name: string;
+  baseUnit: BaseUnit;
+  requiredFinishedBase: number;
+  batchYieldBase: number | null;
+  theoreticalBatches: number | null;
+  recommendedBatches: number | null;
+  scaleFactor: number; // required / batchYield (theoretical)
+  components: {
+    name: string;
+    type: ComponentType;
+    baseUnit: BaseUnit;
+    quantityBase: number; // scaled to production
+  }[];
+  costCents: number | null;
+}
+
+export interface ProductionComputation {
+  weekId: number;
+  totalOrders: number;
+  totalMeals: number;
+  distinctDishes: number;
+  estimatedFoodCostCents: number | null;
+  estimatedRawWeightBase: number;
+  bufferPct: number;
+  dishes: DishProduction[];
+  subRecipes: SubRecipeProduction[];
+  ingredients: IngredientRequirement[];
+  estimatedPurchasingCostCents: number | null;
+  warnings: string[];
+}
+
+export type ProductionStatus = "draft" | "finalised";
+
+export interface ProductionPlan {
+  id: number;
+  weeklyMenuId: number;
+  status: ProductionStatus;
+  bufferPct: number;
+  ordersSignature: string;
+  createdAt: string;
+  finalisedAt: string | null;
+  updatedAt: string;
+  snapshot: ProductionComputation | null;
+}
+
 export interface InvoiceData {
   invoiceNumber: string;
   orderNumber: string;

@@ -141,3 +141,87 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_meal ON order_items(meal_id);
+
+-- ═══════════════════════════════════════════════════════════════════════
+--  RECIPE / YIELD / COSTING / PRODUCTION MODULE
+--  Weights are integer grams, volumes integer millilitres, counts integer
+--  "each". Prices are integer cents per kg / per litre / per each. Yield is
+--  a REAL percentage (e.g. 75, 250) — ratio = yield_pct / 100.
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- ─── Ingredients (things purchased externally) ───
+CREATE TABLE IF NOT EXISTS ingredients (
+  id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+  name                   TEXT NOT NULL,
+  category               TEXT NOT NULL DEFAULT 'Other',   -- Meat/Protein, Produce, Dry Goods, Dairy…
+  base_unit              TEXT NOT NULL DEFAULT 'g' CHECK (base_unit IN ('g','ml','each')),
+  default_yield_pct      REAL NOT NULL DEFAULT 100,       -- >0; may exceed 100 (rice, beans…)
+  price_cents            INTEGER,                          -- cents per kg / litre / each; NULL = unknown
+  supplier               TEXT NOT NULL DEFAULT '',
+  supplier_sku           TEXT NOT NULL DEFAULT '',
+  pack_size_base         INTEGER,                          -- optional: pack size in base units
+  pack_price_cents       INTEGER,                          -- optional: price for one pack
+  purchase_increment_base INTEGER,                         -- optional: round purchasing up to this many base units
+  buffer_pct_override    REAL,                             -- optional: per-ingredient production buffer
+  notes                  TEXT NOT NULL DEFAULT '',
+  last_price_update      TEXT,
+  is_active              INTEGER NOT NULL DEFAULT 1,
+  created_at             TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  updated_at             TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ingredients_category ON ingredients(category);
+
+-- ─── Recipes (final dish linked to a meal, OR a batch/sub-recipe) ───
+CREATE TABLE IF NOT EXISTS recipes (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  meal_id           INTEGER REFERENCES meals(id),          -- set for a Final Dish; NULL for a Batch Recipe
+  name              TEXT NOT NULL,
+  recipe_type       TEXT NOT NULL DEFAULT 'final' CHECK (recipe_type IN ('final','batch')),
+  version           INTEGER NOT NULL DEFAULT 1,
+  is_active         INTEGER NOT NULL DEFAULT 1,
+  -- Batch recipes only: the actual finished yield of one standard batch.
+  batch_yield_base  INTEGER,                               -- finished yield in base units
+  batch_yield_unit  TEXT NOT NULL DEFAULT 'g' CHECK (batch_yield_unit IN ('g','ml','each')),
+  batch_increment   REAL,                                  -- production rounding, in batches (0.25/0.5/1); NULL = exact
+  instructions      TEXT NOT NULL DEFAULT '',
+  notes             TEXT NOT NULL DEFAULT '',
+  created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_recipes_meal ON recipes(meal_id);
+CREATE INDEX IF NOT EXISTS idx_recipes_type ON recipes(recipe_type);
+
+-- ─── Recipe components (polymorphic: an ingredient OR a child recipe) ───
+CREATE TABLE IF NOT EXISTS recipe_components (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipe_id        INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+  component_type   TEXT NOT NULL CHECK (component_type IN ('ingredient','recipe')),
+  ingredient_id    INTEGER REFERENCES ingredients(id),     -- when component_type = 'ingredient'
+  child_recipe_id  INTEGER REFERENCES recipes(id),         -- when component_type = 'recipe'
+  -- Meaning of quantity_base depends on context (see recipe-engine.ts):
+  --  • ingredient in a FINAL dish  → cooked/finished portion weight
+  --  • ingredient in a BATCH recipe → raw input weight for one standard batch
+  --  • sub-recipe component        → finished quantity used
+  quantity_base    INTEGER NOT NULL DEFAULT 0,
+  yield_override   REAL,                                   -- optional per-recipe yield override (ingredient-in-final-dish)
+  price_override_cents INTEGER,                            -- optional per-recipe price override
+  prep_notes       TEXT NOT NULL DEFAULT '',
+  sort_order       INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_components_recipe ON recipe_components(recipe_id);
+CREATE INDEX IF NOT EXISTS idx_recipe_components_ingredient ON recipe_components(ingredient_id);
+CREATE INDEX IF NOT EXISTS idx_recipe_components_child ON recipe_components(child_recipe_id);
+
+-- ─── Production plans (per week; snapshot frozen on finalise) ───
+CREATE TABLE IF NOT EXISTS production_plans (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  weekly_menu_id    INTEGER NOT NULL REFERENCES weekly_menus(id) ON DELETE CASCADE,
+  status            TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','finalised')),
+  buffer_pct        REAL NOT NULL DEFAULT 0,
+  snapshot_json     TEXT,                                  -- frozen computed result at finalise
+  orders_signature  TEXT NOT NULL DEFAULT '',              -- detects order changes after finalise
+  created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  finalised_at      TEXT,
+  updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_production_plans_week ON production_plans(weekly_menu_id);

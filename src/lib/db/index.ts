@@ -41,6 +41,10 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   invoiceNext: "1",
   defaultDeliveryFeeCents: "0",
 
+  // Production module: default waste/production buffer applied to ingredient
+  // purchasing requirements (per-ingredient override possible).
+  defaultBufferPct: "5",
+
   invoicePaperSize: "A4",
   labelSize: "4x6",
   labelOrientation: "portrait",

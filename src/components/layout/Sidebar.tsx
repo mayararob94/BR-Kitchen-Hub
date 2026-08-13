@@ -13,6 +13,9 @@ import {
   FileText,
   Truck,
   Settings,
+  Carrot,
+  ChefHat,
+  Factory,
 } from "lucide-react";
 
 const NAV = [
@@ -21,7 +24,10 @@ const NAV = [
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/meals", label: "Meals", icon: UtensilsCrossed },
+  { href: "/ingredients", label: "Ingredients", icon: Carrot },
+  { href: "/recipes", label: "Recipes", icon: ChefHat },
   { href: "/weekly-menu", label: "Weekly Menu", icon: CalendarRange },
+  { href: "/production", label: "Production", icon: Factory },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/labels", label: "Delivery / Labels", icon: Truck },
   { href: "/settings", label: "Settings", icon: Settings },

@@ -66,6 +66,46 @@ tab through the meal quantities.
 
 ---
 
+## Recipes, costing & production ordering
+
+A full production module connects every dish to its recipe so the system can
+plan production and purchasing from real orders.
+
+- **Ingredients** — a central database of purchased items with **Yield %**
+  (supports values above 100% for rice/beans/pasta), price per kg/L/each (or
+  pack size + pack price), supplier, purchase increment and an optional buffer
+  override. Yield turns cooked/finished weight into the **raw** weight you must
+  buy: `raw = cooked ÷ (yield ÷ 100)`.
+- **Recipes** — two kinds, sharing one engine:
+  - **Final Dish** — linked to a meal; you enter each component's finished
+    weight and the system derives raw quantity, cost/meal, food-cost % and
+    margin (using the meal's selling price).
+  - **Batch Recipe / Sub-Recipe** — sauces, stocks, braised meats etc. that are
+    produced internally and used **inside other recipes** (e.g. Béchamel in
+    Lasagna). A batch has a finished yield; its cost/kg flows automatically into
+    any recipe that uses it. Recipes can nest (a sub-recipe can contain another),
+    with circular-dependency protection.
+- **Production** (`/production`) — pick a week and the system aggregates all
+  confirmed orders into:
+  - a summary (orders, meals, dishes, estimated food cost, raw weight);
+  - **Dish Production** — finished + raw quantities per dish;
+  - **Batch/Sub-Recipe Production** — required finished quantity, theoretical vs
+    recommended batches, scaled ingredients;
+  - **Ingredient Requirements** — every raw ingredient consolidated across all
+    dishes (sub-recipes are recursively expanded into raw ingredients — you buy
+    *milk*, not *Béchamel*), with production buffer and purchase-increment
+    rounding.
+  - **Draft → Finalised**: finalising freezes a snapshot so historical plans stay
+    accurate even if recipes or prices change later; the page warns if orders
+    change after finalisation.
+- **PDFs** (A4, via print / Save-as-PDF): **Ordering PDF** (purchasing list
+  grouped by category with checkboxes and estimated cost), **Production PDF**
+  (by dish + sub-recipe production for the kitchen), and **Recipe Cards**
+  (master, or scaled to a week's production).
+
+All weights are stored as integer grams/millilitres and prices as integer cents
+to avoid rounding drift. The default production buffer is set in **Settings**.
+
 ## Printing
 
 Dedicated print CSS means only the document prints — no sidebar or buttons.

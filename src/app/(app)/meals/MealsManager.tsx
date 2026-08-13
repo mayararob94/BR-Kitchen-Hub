@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Meal, Category } from "@/types";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney, centsToDollars, dollarsToCents } from "@/lib/money";
@@ -13,6 +14,17 @@ import {
   updateCategoryAction,
   deleteCategoryAction,
 } from "@/app/actions/meals";
+import { ensureMealRecipeAction } from "@/app/actions/recipes";
+
+export interface MealRecipeInfo {
+  hasRecipe: boolean;
+  recipeId?: number;
+  empty?: boolean;
+  foodCostCents?: number | null;
+  costUnavailable?: boolean;
+  foodCostPct?: number | null;
+  marginPct?: number | null;
+}
 
 interface MealDraft {
   name: string;
@@ -39,9 +51,11 @@ function toDraft(m?: Meal): MealDraft {
 export function MealsManager({
   meals,
   categories,
+  recipeInfo,
 }: {
   meals: Meal[];
   categories: Category[];
+  recipeInfo: Record<number, MealRecipeInfo>;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<Meal | null>(null);
@@ -124,6 +138,7 @@ export function MealsManager({
                 <th className="th">Meal</th>
                 <th className="th">Category</th>
                 <th className="th">Price</th>
+                <th className="th">Recipe / Food Cost</th>
                 <th className="th">Status</th>
                 <th className="th text-right">Actions</th>
               </tr>
@@ -139,6 +154,9 @@ export function MealsManager({
                   </td>
                   <td className="td">{m.categoryName ?? "—"}</td>
                   <td className="td">{formatMoney(m.priceCents)}</td>
+                  <td className="td">
+                    <RecipeCell info={recipeInfo[m.id]} meal={m} />
+                  </td>
                   <td className="td">
                     {m.isActive ? (
                       <span className="badge bg-tropical-100 text-tropical-800">
@@ -163,7 +181,7 @@ export function MealsManager({
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td className="td py-8 text-center text-gray-400" colSpan={5}>
+                  <td className="td py-8 text-center text-gray-400" colSpan={6}>
                     No meals yet. Click “New Meal”.
                   </td>
                 </tr>
@@ -287,6 +305,41 @@ export function MealsManager({
         categories={categories}
       />
     </div>
+  );
+}
+
+function RecipeCell({ info, meal }: { info?: MealRecipeInfo; meal: Meal }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  if (!info || !info.hasRecipe || info.empty) {
+    return (
+      <button
+        className="badge bg-amber-50 text-amber-700 hover:bg-amber-100"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const { id } = await ensureMealRecipeAction(meal.id, meal.name);
+            router.push(`/recipes/${id}`);
+          })
+        }
+      >
+        {pending ? "…" : "Recipe missing — add"}
+      </button>
+    );
+  }
+  return (
+    <Link href={`/recipes/${info.recipeId}`} className="text-sm hover:underline">
+      <span className="font-medium text-gray-800">
+        {info.foodCostCents != null ? formatMoney(info.foodCostCents) : "—"}
+      </span>
+      {info.foodCostPct != null && (
+        <span className="ml-1 text-gray-400">
+          ({info.foodCostPct.toFixed(0)}% cost · {info.marginPct?.toFixed(0)}% margin)
+        </span>
+      )}
+      {info.costUnavailable && <span className="ml-1 text-amber-600">*</span>}
+    </Link>
   );
 }
 

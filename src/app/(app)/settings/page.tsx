@@ -1,4 +1,4 @@
-import { getSettings } from "@/lib/db/settings-db";
+import { getSettings, getSetting } from "@/lib/db/settings-db";
 import { listBackups } from "@/lib/db/backup";
 import { listWeeks, getActiveWeek } from "@/lib/db/weeks-db";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -42,6 +42,7 @@ export default function SettingsPage() {
             invoicePaperSize: s.invoicePaperSize,
             labelSize: s.labelSize,
             labelOrientation: s.labelOrientation,
+            defaultBufferPct: getSetting("defaultBufferPct", "5"),
           }}
         />
 
