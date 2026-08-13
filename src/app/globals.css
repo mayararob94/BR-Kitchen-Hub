@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #ff914d;
+  --brand-dark: #9c4819;
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-800 antialiased;
+  }
+  ::selection {
+    background-color: rgba(255, 145, 77, 0.25);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SCREEN UI COMPONENTS
+   ───────────────────────────────────────────────────────────── */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/40 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
+  }
+  .btn-ghost {
+    @apply btn text-gray-600 hover:bg-gray-100;
+  }
+  .btn-danger {
+    @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50;
+  }
+  .input {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500;
+  }
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .th {
+    @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500;
+  }
+  .td {
+    @apply px-3 py-2 text-sm text-gray-700;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PRINTING
+   By default every print target is hidden. Each print view sets a
+   body data-print attribute so ONLY that content prints and the app
+   chrome (sidebar/buttons) disappears.
+   ───────────────────────────────────────────────────────────── */
+
+/* Anything marked .no-print never appears on paper */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}
+
+/* Preserve background colours (header bands, table headers) when printing. */
+.print-page,
+.label-4x6 {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── A4 documents: invoices, production summary, delivery manifest ── */
+@media print {
+  body[data-print] .app-chrome {
+    display: none !important;
+  }
+  body[data-print] .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    width: auto !important;
+  }
+  .print-page {
+    break-after: page;
+    page-break-after: always;
+  }
+  .print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
+body[data-print="a4"],
+body[data-print="a4l"] {
+  background: #f3f0ed;
+}
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+/* ── 4×6 inch thermal delivery labels ──
+   152.4mm × 101.6mm LANDSCAPE (6×4). Each label is its own page. */
+@media print {
+  body[data-print="label"] {
+    background: #fff !important;
+  }
+  body[data-print="label"] .app-chrome {
+    display: none !important;
+  }
+  body[data-print="label"] .label-4x6 {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    width: 152.4mm !important;
+    height: 101.6mm !important;
+    break-after: page;
+    page-break-after: always;
+  }
+  body[data-print="label"] .label-4x6:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+}
+
+/* The @page size must be declared so browsers pick 6×4 automatically.
+   PrintControls injects the matching @page size on the label route. */
+.label-4x6 {
+  width: 152.4mm;
+  height: 101.6mm;
+}
